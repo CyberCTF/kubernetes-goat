@@ -1,0 +1,42 @@
+# yaml-language-server: $schema=https://www.isoloom.com/schema/v1.json
+# Kubernetes Goat (by Madhu Akula): an intentionally vulnerable Kubernetes cluster with about
+# twenty scenarios (secrets in code and layers, SSRF to the metadata API, container escape,
+# docker-in-docker, RBAC misconfiguration, registry attacks, namespace bypass and more).
+# Source: https://github.com/madhuakula/kubernetes-goat, vendored in kubernetes-goat/. The lab is
+# a cluster: one VM runs single-node k3s (provision/k3s.sh), and upstream's manifests and Helm
+# chart are deployed on it (provision/goat.sh), the scenarios exposed on ports 1230 to 1236.
+# VM targets only. `isoloom run vagrant`, then `isoloom test vagrant`.
+version: 1
+name: kubernetes-goat
+
+networks:
+  lab: { cidr: 10.60.120.0/24 }
+
+machines:
+  goat:
+    networks: { lab: 10 }
+    services:
+      - { port: 22, name: ssh }
+      - { port: 1230, name: build-code, http: true }
+      - { port: 1231, name: health-check, http: true }
+      - { port: 1232, name: internal-proxy, http: true }
+      - { port: 1233, name: system-monitor, http: true }
+      - { port: 1234, name: portal, http: true }
+      - { port: 1235, name: poor-registry, http: true }
+      - { port: 1236, name: hunger-check, http: true }
+    resources: { cpus: 2, memory_mb: 4096, disk_gb: 30 }
+    vm:
+      os: ubuntu-24.04
+      provision: [provision/k3s.sh, provision/goat.sh]
+
+# The first start pulls about a dozen images.
+checks:
+  - { name: the portal answers, http: "http://goat:1234/", wait: 600 }
+  - { name: the SSRF scenario answers, http: "http://goat:1232/", wait: 300 }
+  - checks/scenarios.sh
+
+message: |
+  Kubernetes Goat is up at {{ machines.goat.addresses.lab }}: open http://{{ machines.goat.addresses.lab }}:1234/
+  for the portal; the scenarios answer on ports 1230 to 1236. The cluster itself is part of the
+  lab: `isoloom connect vagrant goat` gives a shell with kubectl. Start with "Sensitive keys in
+  codebases" on port 1230.

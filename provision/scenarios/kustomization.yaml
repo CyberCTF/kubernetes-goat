@@ -1,0 +1,30 @@
+# The scenario manifests upstream's setup-kubernetes-goat.sh applies, in its order, unchanged,
+# with one difference: upstream's images have no tag (so `latest`, pulled at every start), and
+# here each is pinned to the digest `latest` had at release v2.3.0 (pushed 2022-05 to 2024-09,
+# none since). Applied by provision/goat.sh with
+# `kubectl kustomize --load-restrictor LoadRestrictionsNone`.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../kubernetes-goat/scenarios/batch-check/job.yaml
+  - ../../kubernetes-goat/scenarios/build-code/deployment.yaml
+  - ../../kubernetes-goat/scenarios/cache-store/deployment.yaml
+  - ../../kubernetes-goat/scenarios/health-check/deployment.yaml
+  - ../../kubernetes-goat/scenarios/hunger-check/deployment.yaml
+  - ../../kubernetes-goat/scenarios/internal-proxy/deployment.yaml
+  - ../../kubernetes-goat/scenarios/kubernetes-goat-home/deployment.yaml
+  - ../../kubernetes-goat/scenarios/poor-registry/deployment.yaml
+  - ../../kubernetes-goat/scenarios/system-monitor/deployment.yaml
+  - ../../kubernetes-goat/scenarios/hidden-in-layers/deployment.yaml
+images:
+  - { name: madhuakula/k8s-goat-batch-check, digest: "sha256:8642ce33d356861321c4f3948ee7e7570958cf2929d2e3c528cd529fff462c75" }
+  - { name: madhuakula/k8s-goat-build-code, digest: "sha256:0636439aab959e81b520574e6998c1847a84a4b9705708e68ab3923cb34c6520" }
+  - { name: madhuakula/k8s-goat-cache-store, digest: "sha256:4b00de713d8d3318f222b43488e271ef0815f3cd81f782996e7b89e5cf2b58c6" }
+  - { name: madhuakula/k8s-goat-health-check, digest: "sha256:19561147b9ef0b0840ca78af3a8efcac7b68bdc13b4fa1c505841af539bccfa7" }
+  - { name: madhuakula/k8s-goat-hunger-check, digest: "sha256:d0bac8391a0ab7f03f0e21e251b5f7c5cfdb918b5926afcbd26c1e554b28447f" }
+  - { name: madhuakula/k8s-goat-internal-api, digest: "sha256:afcafd47327363070f788b3cc755e98ce5f556e3fea2cb16f8ae18a35b6f4d53" }
+  - { name: madhuakula/k8s-goat-info-app, digest: "sha256:31eaaecaff18c91c8b75ad72cb7f5db4525861a3b6785604764564ca5c297d7e" }
+  - { name: madhuakula/k8s-goat-home, digest: "sha256:0fe58ea33370d4a1d6a31f0ff4cb3d8a92bb858ffbc705e990021dec92d929be" }
+  - { name: madhuakula/k8s-goat-poor-registry, digest: "sha256:fc084e703a55522f8c35afca155c679e330d8e0aef097f2a9f1b1f678d5b6839" }
+  - { name: madhuakula/k8s-goat-system-monitor, digest: "sha256:79cf7b573ba2b189c8c9a4c90a7da64874c697b050bbffec3169c6a95fa2170b" }
+  - { name: madhuakula/k8s-goat-hidden-in-layers, digest: "sha256:77419a519bc833c7b91ff279d35555fbd932b3e538cb60007147aca925fc569d" }

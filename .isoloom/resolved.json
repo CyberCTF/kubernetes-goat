@@ -1,0 +1,171 @@
+{
+  "generated_by_isoloom": "from isoloom.yml; don't edit: change the spec and run `isoloom generate` (`isoloom check` fails when this file is out of date)",
+  "resolved_version": 1,
+  "name": "kubernetes-goat",
+  "instance": null,
+  "inputs": [],
+  "networks": {
+    "lab": {
+      "cidr": "10.60.120.0/24",
+      "docker_cidr": "10.60.120.0/24",
+      "internet": true,
+      "gateway": null,
+      "gateway_address": "10.60.120.1",
+      "router": null,
+      "controller": "10.60.120.253"
+    }
+  },
+  "reach": [],
+  "machines": {
+    "goat": {
+      "access": false,
+      "supplied": false,
+      "shapes": [
+        "vm"
+      ],
+      "arch": "amd64",
+      "os": "ubuntu-24.04",
+      "windows": false,
+      "addresses": {
+        "lab": "10.60.120.10"
+      },
+      "docker_addresses": {
+        "lab": "10.60.120.10"
+      },
+      "services": [
+        {
+          "port": 22,
+          "name": "ssh",
+          "http": false,
+          "publish": null
+        },
+        {
+          "port": 1230,
+          "name": "build-code",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1231,
+          "name": "health-check",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1232,
+          "name": "internal-proxy",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1233,
+          "name": "system-monitor",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1234,
+          "name": "portal",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1235,
+          "name": "poor-registry",
+          "http": true,
+          "publish": null
+        },
+        {
+          "port": 1236,
+          "name": "hunger-check",
+          "http": true,
+          "publish": null
+        }
+      ],
+      "depends_on": [],
+      "inputs": [],
+      "volumes": {},
+      "resources": {
+        "cpus": 2,
+        "memory_mb": 4096,
+        "disk_gb": 30
+      },
+      "gateway_of": [],
+      "routes": [],
+      "default_gateway": null,
+      "offline": false
+    }
+  },
+  "start_order": [
+    "goat"
+  ],
+  "clones": {},
+  "tools": {},
+  "groups": {},
+  "router": null,
+  "controller": {
+    "addresses": {
+      "lab": "10.60.120.253"
+    }
+  },
+  "published": [],
+  "targets": {
+    "possible": [
+      "vagrant",
+      "proxmox",
+      "cloud-vm"
+    ],
+    "generated": [
+      "vagrant",
+      "proxmox",
+      "cloud-vm"
+    ],
+    "refused": {},
+    "not_possible": {
+      "docker": "needs `docker:` on goat",
+      "hosted": "needs `docker:` on goat",
+      "docker-vm": "needs `docker:` on goat",
+      "cloud-docker": "needs `docker:` on goat",
+      "kubernetes": "needs `docker:` on goat",
+      "hybrid": "only when some machines are containers and others are VMs",
+      "external": "needs `external:` on goat"
+    }
+  },
+  "checks": {
+    "default_position": "networks",
+    "positions": [
+      {
+        "position": "networks",
+        "machine": null,
+        "runner": "isoloom-check",
+        "checks": [
+          {
+            "name": "the portal answers",
+            "derived": false,
+            "kind": "http",
+            "target": "http://goat:1234/",
+            "expect": "200",
+            "wait": 600
+          },
+          {
+            "name": "the SSRF scenario answers",
+            "derived": false,
+            "kind": "http",
+            "target": "http://goat:1232/",
+            "expect": "200",
+            "wait": 300
+          },
+          {
+            "name": "checks/scenarios.sh",
+            "derived": false,
+            "kind": "script",
+            "target": "checks/scenarios.sh",
+            "expect": "",
+            "wait": 0
+          }
+        ]
+      }
+    ]
+  },
+  "message": "Kubernetes Goat is up at 10.60.120.10: open http://10.60.120.10:1234/\nfor the portal; the scenarios answer on ports 1230 to 1236. The cluster itself is part of the\nlab: `isoloom connect vagrant goat` gives a shell with kubectl. Start with \"Sensitive keys in\ncodebases\" on port 1230.\n"
+}
