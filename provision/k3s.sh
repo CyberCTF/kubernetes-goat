@@ -42,5 +42,10 @@ i=0
 until kubectl get nodes 2>/dev/null | grep -q ' Ready'; do
   i=$((i + 1)); [ $i -lt 90 ] || { echo "k3s node never became Ready"; exit 1; }; sleep 2
 done
+# k3s creates its add-ons (CoreDNS first) a little after the node is Ready.
+i=0
+until kubectl -n kube-system get deploy/coredns >/dev/null 2>&1; do
+  i=$((i + 1)); [ $i -lt 90 ] || { echo "CoreDNS never deployed"; exit 1; }; sleep 2
+done
 kubectl -n kube-system rollout status deploy/coredns --timeout=300s
 echo "k3s $K3S_VERSION and Helm $HELM_VERSION ready"
