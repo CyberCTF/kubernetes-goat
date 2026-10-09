@@ -128,7 +128,8 @@
       "cloud-docker": "needs `docker:` on goat",
       "kubernetes": "needs `docker:` on goat",
       "hybrid": "only when some machines are containers and others are VMs",
-      "external": "needs `external:` on goat"
+      "external": "needs `external:` on goat",
+      "cloud-services": "left out by `targets:`"
     }
   },
   "checks": {
