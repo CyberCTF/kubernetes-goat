@@ -91,6 +91,12 @@ variable "ssh_public_key" {
   default     = ""
   description = "Installed for the user `isoloom` on every VM"
 }
+variable "inputs" {
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+  description = "Values given at launch"
+}
 
 provider "proxmox" {
   endpoint  = var.proxmox_endpoint
@@ -253,10 +259,10 @@ resource "proxmox_virtual_environment_file" "goat" {
       hostname    = "goat"
       users       = local.users
       packages    = ["nftables", "curl", "netcat-openbsd"]
-      write_files = local.project_files
+      write_files = concat(local.project_files, [{ path = "/etc/isoloom/inputs.env", permissions = "0600", content = join("\n", ["CTF_FLAG_MAIN=${lookup(var.inputs, "CTF_FLAG_MAIN", "")}", "CTF_FLAG_NAMESPACES_BYPASS=${lookup(var.inputs, "CTF_FLAG_NAMESPACES_BYPASS", "")}", "CTF_FLAG_ENVIRONMENT_INFORMATION=${lookup(var.inputs, "CTF_FLAG_ENVIRONMENT_INFORMATION", "")}", "CTF_FLAG_RBAC_LEAST_PRIVILEGE=${lookup(var.inputs, "CTF_FLAG_RBAC_LEAST_PRIVILEGE", "")}"]) }])
       runcmd = [
-        ["sh", "-c", "cd /opt/isoloom && sh provision/k3s.sh"],
-        ["sh", "-c", "cd /opt/isoloom && sh provision/goat.sh"],
+        ["sh", "-c", "cd /opt/isoloom && set -a; . /etc/isoloom/inputs.env; set +a; sh provision/k3s.sh"],
+        ["sh", "-c", "cd /opt/isoloom && set -a; . /etc/isoloom/inputs.env; set +a; sh provision/goat.sh"],
         ["sh", "-c", "mkdir -p /var/lib/isoloom && echo ready > /var/lib/isoloom/ready"]
       ]
     })}"

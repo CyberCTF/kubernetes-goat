@@ -1,7 +1,7 @@
 {
   "title": "Kubernetes Goat",
   "description": "Madhu Akula's intentionally vulnerable Kubernetes cluster: about twenty scenarios covering secrets in code and image layers, SSRF to internal services, container escape to the host, docker-in-docker, RBAC misconfiguration, private registry attacks and namespace bypass.",
-  "question": "Find the k8s-goat flags hidden across the scenarios.",
+  "question": "Solve the Kubernetes Goat scenarios listed for this lab: find each scenario's flag or answer, and escape to the node to read /root/flag.txt.",
   "category": "MISC",
   "difficulty": 3,
   "evidence_kind": "SECRET"

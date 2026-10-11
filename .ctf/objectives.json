@@ -1,0 +1,203 @@
+{
+  "objectives": [
+    {
+      "key": "sensitive-keys-in-codebases",
+      "title": "Sensitive keys in codebases",
+      "prompt": "The build-code application on port 1230 leaks its source history. Find the AWS keys and the k8s-goat flag committed in it.",
+      "check": { "flag": "k8s-goat-51bc78332065561b0c99280f62510bcc" },
+      "hints": [
+        "Is the application's version control directory served over HTTP?",
+        "Secrets removed in a later commit are still in the history."
+      ]
+    },
+    {
+      "key": "dind-exploitation",
+      "title": "DIND (docker-in-docker) exploitation",
+      "prompt": "The health-check service on port 1231 runs a command for you, and its pod mounts a container runtime socket from the node. Which container runtime is it?",
+      "check": { "answer": ["containerd", "containerd.sock"] },
+      "hints": [
+        "Look for a socket file mounted in an unusual place in the container.",
+        "The runtime's CLI can list the node's containers and images once pointed at that socket."
+      ]
+    },
+    {
+      "key": "ssrf-in-kubernetes",
+      "title": "SSRF in the Kubernetes world",
+      "prompt": "The internal-proxy on port 1232 fetches URLs for you. Use it to reach the cluster's internal metadata service and read the k8s-goat flag in its secrets.",
+      "check": { "flag": "k8s-goat-ca90ef85db7a5aef0198d02fb0df9cab" },
+      "hints": [
+        "The technique is server-side request forgery (SSRF): the proxy reaches what you can't.",
+        "Internal services have predictable Kubernetes service names; look for a metadata-db.",
+        "The flag value is returned base64-encoded."
+      ]
+    },
+    {
+      "key": "main",
+      "title": "Container escape to the host system",
+      "prompt": "From the system-monitor service on port 1233, escape to the node and read /root/flag.txt.",
+      "check": { "evidence": "SECRET", "format": "FLAG{%s}" },
+      "dev": "FLAG{dev-kubernetes-goat}",
+      "hints": [
+        "Check what the container can see of the node: its mounts and its privileges.",
+        "The technique is a container escape through a host filesystem mount."
+      ],
+      "steps": [
+        {
+          "key": "mount",
+          "title": "Find the node's filesystem",
+          "prompt": "At which path inside the system-monitor container is the node's root filesystem mounted?",
+          "check": { "answer": ["/host-system", "/host-system/", "host-system"] }
+        },
+        {
+          "key": "privilege",
+          "title": "Name the misconfiguration",
+          "prompt": "Which securityContext setting does the system-monitor container run with that gives it the node's devices?",
+          "check": { "answer": ["privileged", "privileged: true", "privileged mode"] }
+        }
+      ]
+    },
+    {
+      "key": "attacking-private-registry",
+      "title": "Attacking private registry",
+      "prompt": "The poor-registry on port 1235 is a container registry without authentication. Find the k8s-goat flag in one of its images.",
+      "check": { "flag": "k8s-goat-cf658c56a501385205cc6d2dafee8fc1" },
+      "hints": [
+        "The Docker Registry HTTP API v2 can list repositories and serve image manifests.",
+        "Image configuration holds environment variables."
+      ]
+    },
+    {
+      "key": "nodeport-exposed-services",
+      "title": "NodePort exposed services",
+      "prompt": "One service of the cluster is exposed on every node's address through a NodePort. Which port number?",
+      "check": { "answer": ["30003"] },
+      "hints": [
+        "NodePorts are allocated from the 30000 to 32767 range by default.",
+        "Scan that range on the node's address, or list the services with kubectl."
+      ]
+    },
+    {
+      "key": "analyzing-crypto-miner-container",
+      "title": "Analyzing crypto miner container",
+      "prompt": "A batch job in the cluster runs a suspicious image. Find the k8s-goat flag in that image.",
+      "check": { "flag": "k8s-goat-a5e0a28fa75bf429123943abedb065d1" },
+      "hints": [
+        "List the cluster's jobs and the images they run.",
+        "An image's build history shows the commands of every layer."
+      ]
+    },
+    {
+      "key": "namespaces-bypass",
+      "title": "Kubernetes namespaces bypass",
+      "prompt": "Namespaces are not a network boundary. From a pod in another namespace, reach the cache-store in secure-middleware and read the flag it holds.",
+      "check": { "evidence": "SECRET", "format": "FLAG{%s}" },
+      "dev": "k8s-goat-a5a3e446faafa9d0514b3ff396ab8a40",
+      "hints": [
+        "Without network policies, any pod can talk to any other pod's service.",
+        "The cache-store is a Redis server on its default port, with no authentication."
+      ]
+    },
+    {
+      "key": "environment-information",
+      "title": "Gaining environment information",
+      "prompt": "Explore the environment of the system-monitor container on port 1233 and find the k8s-goat vault key.",
+      "check": { "evidence": "SECRET", "format": "FLAG{%s}" },
+      "dev": "k8s-goat-cd2da27224591da2b48ef83826a8a6c3",
+      "hints": [
+        "Kubernetes Secrets are often handed to containers as environment variables.",
+        "Standard Linux utilities list a process's environment."
+      ]
+    },
+    {
+      "key": "dos-memory-cpu-resources",
+      "title": "DoS the memory/CPU resources",
+      "prompt": "The hunger-check service on port 1236 can consume as much of the node as it likes. Which part of its container spec is missing?",
+      "check": { "answer": ["resource limits", "resources limits", "limits", "resources.limits", "resource limit", "resources"] },
+      "hints": ["Compare the hunger-check deployment with the system-monitor one: what bounds the latter's memory and CPU?"]
+    },
+    {
+      "key": "hidden-in-layers",
+      "title": "Hidden in layers",
+      "prompt": "A file was added to the hidden-in-layers image and deleted in a later layer. Recover the k8s-goat flag it held.",
+      "check": { "flag": "k8s-goat-3b7a7dc7f51f4014ddf3446c25f8b772" },
+      "hints": [
+        "Deleting a file in a later layer doesn't remove it from the earlier one.",
+        "Export the image and inspect each layer's contents."
+      ]
+    },
+    {
+      "key": "rbac-least-privilege",
+      "title": "RBAC least privileges misconfiguration",
+      "prompt": "From the hunger-check pod on port 1236, use its service account's permissions to read the k8svaultapikey secret in big-monolith.",
+      "check": { "evidence": "SECRET", "format": "FLAG{%s}" },
+      "dev": "k8s-goat-85057846a8046a25b35f38f3a2649dce",
+      "hints": [
+        "Every pod has a service account token mounted under /var/run/secrets/kubernetes.io/serviceaccount/.",
+        "What does that service account's Role allow on resources in its namespace?"
+      ]
+    },
+    {
+      "key": "docker-cis-benchmarks",
+      "title": "Docker CIS benchmarks analysis",
+      "prompt": "Which tool from Docker audits a host against the CIS Docker Benchmark?",
+      "check": { "answer": ["docker-bench-security", "docker bench security", "docker bench", "docker-bench"] },
+      "optional": true
+    },
+    {
+      "key": "kubernetes-cis-benchmarks",
+      "title": "Kubernetes CIS benchmarks analysis",
+      "prompt": "Which Aqua Security tool checks a cluster's nodes against the CIS Kubernetes Benchmark?",
+      "check": { "answer": ["kube-bench", "kubebench", "kube bench"] },
+      "optional": true
+    },
+    {
+      "key": "hacker-container-preview",
+      "title": "Hacker container preview",
+      "prompt": "Kubernetes Goat's author ships an image packed with Kubernetes security tools to run inside a cluster. What is it called?",
+      "check": { "answer": ["hacker-container", "hacker container", "madhuakula/hacker-container"] },
+      "optional": true
+    },
+    {
+      "key": "kubeaudit",
+      "title": "KubeAudit: audit Kubernetes clusters",
+      "prompt": "kubeaudit audits clusters for common security misconfigurations. Which company created it?",
+      "check": { "answer": ["shopify"] },
+      "optional": true
+    },
+    {
+      "key": "falco",
+      "title": "Falco: runtime security monitoring",
+      "prompt": "Falco detects suspicious behaviour at runtime from a ruleset. In which file format are its rules written?",
+      "check": { "answer": ["yaml", "yml"] },
+      "optional": true
+    },
+    {
+      "key": "popeye",
+      "title": "Popeye: a Kubernetes cluster sanitizer",
+      "prompt": "Popeye scans a live cluster for misconfigurations. Its author also wrote which Kubernetes terminal UI?",
+      "check": { "answer": ["k9s"] },
+      "optional": true
+    },
+    {
+      "key": "network-security-policy",
+      "title": "Secure network boundaries using NSP",
+      "prompt": "Which Kubernetes resource kind restricts which pods may reach the website service?",
+      "check": { "answer": ["networkpolicy", "network policy", "networkpolicies", "network policies"] },
+      "optional": true
+    },
+    {
+      "key": "cilium-tetragon",
+      "title": "Cilium Tetragon: eBPF-based security observability",
+      "prompt": "Which Tetragon resource kind declares what kernel events to trace and enforce on?",
+      "check": { "answer": ["tracingpolicy", "tracing policy", "tracingpolicies"] },
+      "optional": true
+    },
+    {
+      "key": "kyverno",
+      "title": "Securing clusters with Kyverno",
+      "prompt": "Which Kyverno resource kind applies a policy to the whole cluster, such as blocking exec into pods of the vault namespace?",
+      "check": { "answer": ["clusterpolicy", "cluster policy", "clusterpolicies"] },
+      "optional": true
+    }
+  ]
+}

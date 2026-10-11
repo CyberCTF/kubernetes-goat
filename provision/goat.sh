@@ -10,6 +10,8 @@
 # - access-kubernetes-goat.sh runs `kubectl port-forward` in the background of the user's shell;
 #   here the same forwards (to the scenarios' Services) run as a systemd service, restarted when
 #   a pod restarts, so the ports answer on the VM's address after every boot.
+# - Four flags are the player's own (CTF_FLAG_*, given at launch): /root/flag.txt on the node
+#   (container escape), the cache-store's Redis key, and the goatvault and vaultapikey Secrets.
 set -eu
 SRC=/opt/isoloom/kubernetes-goat
 HERE=/opt/isoloom/provision
@@ -20,6 +22,27 @@ echo 'L /run/containerd/containerd.sock - - - - /run/k3s/containerd/containerd.s
 mkdir -p /run/containerd
 systemd-tmpfiles --create /etc/tmpfiles.d/kubernetes-goat-containerd.conf
 
+# CyberCTF per-player flags, given by the launcher; without them (CI, a run by hand) the
+# development values, upstream's flags where upstream has one.
+dev_main='FLAG{dev-kubernetes-goat}'
+dev_bypass='k8s-goat-a5a3e446faafa9d0514b3ff396ab8a40'
+dev_env='k8s-goat-cd2da27224591da2b48ef83826a8a6c3'
+dev_rbac='k8s-goat-85057846a8046a25b35f38f3a2649dce'
+flag_main=${CTF_FLAG_MAIN:-$dev_main}
+flag_bypass=${CTF_FLAG_NAMESPACES_BYPASS:-$dev_bypass}
+flag_env=${CTF_FLAG_ENVIRONMENT_INFORMATION:-$dev_env}
+flag_rbac=${CTF_FLAG_RBAC_LEAST_PRIVILEGE:-$dev_rbac}
+
+# Container escape: a root-only file on the node.
+printf '%s\n' "$flag_main" > /root/flag.txt
+chmod 600 /root/flag.txt
+# Namespaces bypass: the Redis seed the cache-store loads at start (mounted by the kustomization).
+kubectl create namespace secure-middleware --dry-run=client -o yaml | kubectl apply -f -
+printf 'SET SECRETSTUFF "%s"\n' "$flag_bypass" > /tmp/ctf-data.redis
+kubectl -n secure-middleware create configmap cache-store-ctf-data \
+  --from-file=data.redis=/tmp/ctf-data.redis --dry-run=client -o yaml | kubectl apply -f -
+rm -f /tmp/ctf-data.redis
+
 cd "$SRC"
 echo "deploying insecure super admin scenario"
 kubectl apply -f scenarios/insecure-rbac/setup.yaml
@@ -28,6 +51,15 @@ helm status metadata-db >/dev/null 2>&1 || helm install metadata-db scenarios/me
   --set image.tag='latest@sha256:ef7031853252f16396a2ae2a9f8ec3c8355fa1f2979eadf4b64121a2bc7a1f95'
 echo "deploying the vulnerable scenarios manifests"
 kubectl kustomize --load-restrictor LoadRestrictionsNone "$HERE/scenarios" | kubectl apply -f -
+
+# Environment information and RBAC: the two Secrets upstream's manifests just created, with the
+# player's values; the system-monitor reads its Secret at start, the cache-store its seed.
+kubectl -n default create secret generic goatvault --from-literal=k8sgoatvaultkey="$flag_env" \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n big-monolith create secret generic vaultapikey --from-literal=k8svaultapikey="$flag_rbac" \
+  --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n default rollout restart deploy/system-monitor-deployment
+kubectl -n secure-middleware rollout restart deploy/cache-store-deployment
 
 for d in default/build-code-deployment default/health-check-deployment \
          default/internal-proxy-deployment default/system-monitor-deployment \

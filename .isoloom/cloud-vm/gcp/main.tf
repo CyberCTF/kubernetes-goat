@@ -55,6 +55,12 @@ variable "expires_at" {
   default     = ""
   description = "When the environment should end, in Unix seconds (empty: no end), as a tag on every resource so a reaper can find what to destroy"
 }
+variable "inputs" {
+  type        = map(string)
+  default     = {}
+  sensitive   = true
+  description = "Values given at launch"
+}
 
 provider "google" {
   region = var.region
@@ -181,13 +187,17 @@ resource "terraform_data" "goat" {
     source      = "${path.module}/.isoloom-project-goat.tgz"
     destination = "/tmp/isoloom-project.tgz"
   }
+  provisioner "file" {
+    content     = join("\n", ["CTF_FLAG_MAIN=${jsonencode(lookup(var.inputs, "CTF_FLAG_MAIN", ""))}", "CTF_FLAG_NAMESPACES_BYPASS=${jsonencode(lookup(var.inputs, "CTF_FLAG_NAMESPACES_BYPASS", ""))}", "CTF_FLAG_ENVIRONMENT_INFORMATION=${jsonencode(lookup(var.inputs, "CTF_FLAG_ENVIRONMENT_INFORMATION", ""))}", "CTF_FLAG_RBAC_LEAST_PRIVILEGE=${jsonencode(lookup(var.inputs, "CTF_FLAG_RBAC_LEAST_PRIVILEGE", ""))}"])
+    destination = "/tmp/isoloom-inputs.env"
+  }
   provisioner "remote-exec" {
     inline = [
       "set -e",
       "cloud-init status --wait >/dev/null 2>&1 || true",
       "tar -xzf /tmp/isoloom-project.tgz -C /opt/isoloom && rm -f /tmp/isoloom-project.tgz",
-      "cd /opt/isoloom && sudo -E sh -c 'sh provision/k3s.sh'",
-      "cd /opt/isoloom && sudo -E sh -c 'sh provision/goat.sh'",
+      "cd /opt/isoloom && sudo -E sh -c 'set -a; . /tmp/isoloom-inputs.env; set +a; sh provision/k3s.sh'",
+      "cd /opt/isoloom && sudo -E sh -c 'set -a; . /tmp/isoloom-inputs.env; set +a; sh provision/goat.sh'",
       "sudo mkdir -p /var/lib/isoloom && echo ready | sudo tee /var/lib/isoloom/ready >/dev/null"
     ]
   }

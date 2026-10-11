@@ -35,6 +35,12 @@ Differences from upstream's own setup:
 - `access-kubernetes-goat.sh` port-forwards the scenarios from the user's shell; here the same
   forwards run as a systemd service on the VM, so ports 1230 to 1236 answer on its address.
 - One self-referencing symlink of the source is left out (see [UPSTREAM.md](UPSTREAM.md)).
+- The scenarios are the lab's objectives ([`.ctf/objectives.json`](.ctf/objectives.json)), the
+  Helm v2 tiller one left out (deprecated upstream and not deployed). Four flags are each
+  player's own, given at launch and placed by `provision/goat.sh`: `/root/flag.txt` on the node
+  (container escape, `CTF_FLAG_MAIN`), the cache-store's Redis key (namespaces bypass, through a
+  ConfigMap that replaces the image's seed file), and the `goatvault` and `vaultapikey` Secrets
+  (environment information, RBAC). The other flags are upstream's, baked in its prebuilt images.
 
 Lab guide: the [Kubernetes Goat guide](https://madhuakula.com/kubernetes-goat/) (also in
 [`kubernetes-goat/guide/`](kubernetes-goat/guide)). Upstream version and commit:

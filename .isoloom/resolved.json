@@ -3,7 +3,12 @@
   "resolved_version": 1,
   "name": "kubernetes-goat",
   "instance": null,
-  "inputs": [],
+  "inputs": [
+    "CTF_FLAG_MAIN",
+    "CTF_FLAG_NAMESPACES_BYPASS",
+    "CTF_FLAG_ENVIRONMENT_INFORMATION",
+    "CTF_FLAG_RBAC_LEAST_PRIVILEGE"
+  ],
   "networks": {
     "lab": {
       "cidr": "10.60.120.0/24",
@@ -83,7 +88,12 @@
         }
       ],
       "depends_on": [],
-      "inputs": [],
+      "inputs": [
+        "CTF_FLAG_MAIN",
+        "CTF_FLAG_NAMESPACES_BYPASS",
+        "CTF_FLAG_ENVIRONMENT_INFORMATION",
+        "CTF_FLAG_RBAC_LEAST_PRIVILEGE"
+      ],
       "volumes": {},
       "resources": {
         "cpus": 2,
